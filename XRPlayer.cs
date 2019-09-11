@@ -8,21 +8,34 @@ namespace Utils.XR
     // [ExecuteInEditMode]
     public class XRPlayer : MonoBehaviour
     {
-        [Header("XR Trackers")]
+        [Header("Input devices")]
         public XRTracker deviceHead;
         public XRTracker deviceLeft;
         public XRTracker deviceRight;
 
-        public GameObject head;
-        public GameObject body;
+        [Header("Hierarchy")]
+        public GameObject containerOuter;
+        public GameObject containerBody;
+        public GameObject containerInner;
+
+        [Header("Multipliers")]
+        [Range(0.2f, 1f)]
+        public float dropMultiplier = 0.8f;
+        [Range(0.2f, 1f)]
+        public float flatMultiplier = 0.8f;
+        [Range(0.2f, 1f)]
+        public float tiltMultiplier = 0.8f;
+        
+        [Header("Player")]
+        public float height = 2f;
 
         Rigidbody bodyRigidBody;
         CapsuleCollider bodyCollider;
 
         void OnEnable() 
         {
-            bodyRigidBody = body.GetComponent<Rigidbody>();
-            bodyCollider = body.GetComponent<CapsuleCollider>();
+            bodyRigidBody = containerBody.GetComponent<Rigidbody>();
+            bodyCollider = containerBody.GetComponent<CapsuleCollider>();
         }
 
         void OnDisable()
@@ -30,95 +43,134 @@ namespace Utils.XR
 
         }
 
+
+        void Update()
+        {
+            bodyRigidBody.velocity = new Vector3
+            (
+                bodyRigidBody.velocity.x * flatMultiplier,
+                bodyRigidBody.velocity.y * dropMultiplier,
+                bodyRigidBody.velocity.z * flatMultiplier
+            );
+
+        }
+
         void FixedUpdate()
         {
+            MoveCollider();
+
             // TODO: refactor this into XRMovement
             if( deviceRight?.isActiveAndEnabled == true ) 
                 updateMovement();
-
-            UpdateCollider();
         }
         
-        ///////////////////////////////////////
-
-        public float height = 2f;
-
-        public float h_scale = 1f;
-
-        void UpdateCollider()
+        void MoveCollider()
         {
-            Vector3 headPos = deviceHead.transform.localPosition;
-            
-            float h = height + headPos.y;
+            // Move inner container inverse to the head horizontal position to match body collider position  
+            Vector3 head = deviceHead.transform.localPosition;
+            containerInner.transform.localPosition = new Vector3( - head.x, 0, - head.z );
 
             // Adjust collder size and Y position 
+            float h = height + head.y;
             bodyCollider.height = h;
-            bodyCollider.center = new Vector3( 0, headPos.y - h / 2, 0 );
+            bodyCollider.center = new Vector3( 0, head.y - h / 2, 0 );
 
-            Vector3 head_xz = new Vector3( headPos.x, 0, headPos.z );
-            Vector3 head_y = new Vector3( 0, transform.localPosition.y, 0 );
-
-            head_xz = Vector3.Project( head_xz, deviceHead.transform.forward );
-
-            // Move root container towards head
-            transform.localPosition = new Vector3( headPos.x, transform.localPosition.y, headPos.z );
-            // transform.localPosition = new Vector3( head_xz.x, transform.localPosition.y, head_xz.z );
-            // transform.localPosition = head_xz + head_y;
-            // Move head container the other way around 
-            head.transform.localPosition = new Vector3( - headPos.x, 0, - headPos.z );
-            // head.transform.localPosition = new Vector3( - head_xz.x, 0, - head_xz.z );
-            // head.transform.localPosition = head_y - head_xz;
+            // Move outer container towards the head those making the body collider "follow" the headset
+            float outer_y = containerOuter.transform.localPosition.y;
+            float angle = bodyCollider.transform.rotation.eulerAngles.y;
+            Quaternion yRotation = Quaternion.Euler( 0, angle, 0 );
+            Vector3 headOuter = yRotation * deviceHead.transform.localPosition;
+            containerOuter.transform.localPosition = new Vector3( headOuter.x, outer_y, headOuter.z );
         }
 
         ///////////////////////////////////////
 
-        public float angularSpeed = 66f;
-        public float speed = 400f;
+        [Header("Speed")]
+        public float speedTurn = 66f;
+        public float speedHorizontal = 400f;
+        public float speedVertical = 300f;
 
-        [Tooltip("Hello")]
-        public float yLiftSpeed = 0.05f;
 
-        public void Center()
+        public void Teleport( Vector3 position, bool clear_velocity = true )
         {
-            bodyRigidBody.transform.localPosition = new Vector3();
+            transform.position = position;
+
+            containerOuter.transform.localPosition = Vector3.zero;
+            containerInner.transform.localPosition = Vector3.zero;
+            bodyRigidBody.transform.localPosition = Vector3.zero;
+            
+            if( clear_velocity ) bodyRigidBody.velocity = Vector3.zero;
+
+            MoveCollider();
         }
+
+        float tilt_angle = 0f;
+
+        static readonly float sleepAxis = 0.05f;
 
         void updateMovement()
         {
-            if( deviceRight.HasAxisPrimary() )
+            if( deviceRight.GetButtonDown( XRButtons.primaryButton ) )
             {
-                Vector2 axis = deviceRight.GetAxisPrimary();
-
-                if( axis.magnitude > 0.1f )
-                {
-                    float yRot = axis.x * angularSpeed * Time.deltaTime;
-                    // Vector3 angles = bodyRigidBody.transform.localRotation.eulerAngles;
-                    // angles.y += yRot;
-                    // bodyRigidBody.transform.localRotation = Quaternion.Euler( angles );
-                    bodyRigidBody.transform.RotateAround( bodyCollider.transform.position + bodyCollider.center, Vector3.up, yRot );
-                    // bodyRigidBody.transform.Rotate( new Vector3( 0, yRot, 0 ), Space.Self );
-
-                    
-                    // -- MOVE FORWARD / BACKWARDS -- 
-                    // Vector3 delta = new Vector3( 0, 0, axis.y ) * speed * Time.deltaTime;
-                    // Vector3 localForward = transform.worldToLocalMatrix.MultiplyVector( transform.forward );
-                    // transform.localPosition += Vector3.Project( delta, localForward );
-                    // bodyRigidBody.transform.localPosition += tracker_head.transform.forward * axis.y * speed * Time.deltaTime;
-                    // bodyRigidBody.transform.localPosition += bodyRigidBody.transform.forward * axis.y * speed * Time.deltaTime;
-                    // bodyRigidBody.AddForce( bodyRigidBody.transform.forward * axis.y * speed * Time.deltaTime, ForceMode.Force );
-                    Quaternion headRotY = Quaternion.Euler( 0, deviceHead.transform.rotation.eulerAngles.y, 0 );
-                    float moveForward = axis.y * speed * Time.deltaTime;
-                    float moveSideways = 0f;
-                    Vector3 moveForce = new Vector3( moveSideways, 0, moveForward );
-                    bodyRigidBody.AddForce( headRotY * moveForce, ForceMode.Force );
-                    
-                }
+                Teleport( new Vector3( 0, 0.2f, 0 ) );
+                return;
             }
 
-            if( deviceRight.GetButtonDown( CommonUsages.primaryButton ) )
-            {   
-                bodyRigidBody.AddRelativeForce( Vector3.up * 4f, ForceMode.Impulse );
+            // -- [ Lift ] --
+            float grip_right = deviceRight.GetAxisGrip();
+            if( grip_right > sleepAxis )
+            {
+                Vector3 force = speedVertical * grip_right * Time.deltaTime * Vector3.up;
+                bodyRigidBody.AddRelativeForce( force, ForceMode.Force );
             }
+            float grip_left = deviceLeft.GetAxisGrip();
+            if( grip_left > sleepAxis )
+            {
+                Vector3 force = speedVertical / 2 * grip_left * Time.deltaTime * Vector3.down;
+                bodyRigidBody.AddRelativeForce( force, ForceMode.Force );
+            }
+
+            Vector2 axis_left = deviceLeft.GetAxisPrimary();
+            Vector2 axis_right = deviceRight.GetAxisPrimary();
+
+            if( axis_left.magnitude > sleepAxis )
+            {
+                // -- [ Turn ] --
+                Vector3 body_center = bodyCollider.transform.position + bodyCollider.center;
+                float yRot = axis_left.x * speedTurn * Time.deltaTime;
+                bodyRigidBody.transform.RotateAround( body_center, Vector3.up, yRot );
+            }
+
+            // -- [ Tilt ] --
+
+            if( axis_left.y > 0.5f )
+            {
+                tilt_angle += axis_left.y * speedTurn * Time.deltaTime;
+                tilt_angle = Mathf.Clamp( tilt_angle, -75, 75 );
+            }
+            else    tilt_angle *= tiltMultiplier;
+
+            float look_Angle = 0 - deviceHead.transform.localRotation.eulerAngles.y; //  + bodyRigidBody.transform.localRotation.eulerAngles.y;
+            float dx = Mathf.Cos( look_Angle * Mathf.PI / 180 );
+            float dz = Mathf.Sin( look_Angle * Mathf.PI / 180 );
+            containerInner.transform.localRotation = Quaternion.identity;
+            containerInner.transform.Rotate( new Vector3( dx, 0, dz ), tilt_angle , Space.Self );
+
+            if( axis_right.magnitude > sleepAxis )
+            {
+                // -- [ Move ] -- 
+                // What angle on the xz plane the player is currently looking at  
+                float y_Angle = deviceHead.transform.rotation.eulerAngles.y;
+                Quaternion zx_Roation = Quaternion.Euler( 0, y_Angle, 0 );
+                float z_Speed = axis_right.y * speedHorizontal * Time.deltaTime; // Forward speed  
+                float x_Speed = axis_right.x * speedHorizontal * Time.deltaTime; // Sideways speed
+                // Move towards where the player is currenly is looking
+                Vector3 directional_velocity = zx_Roation * new Vector3( x_Speed, 0, z_Speed );
+                bodyRigidBody.AddForce( directional_velocity, ForceMode.Force );
+            }
+
+            // if( deviceRight.GetButtonDown( CommonUsages.primaryButton ) )
+            //     bodyRigidBody.AddRelativeForce( Vector3.up * 4f, ForceMode.Impulse );
         }
 
         //////////////////////////
