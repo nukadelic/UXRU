@@ -151,7 +151,7 @@ namespace Utils.XR
                     else problem = "T";
                 }
 
-                Lof("({0}) Node Added\tID:{1} \t (tracked:{2}) \t Type: {3}", 
+                Lof("({0}) Node Lost\tID:{1} \t (tracked:{2}) \t Type: {3}", 
                     problem,
                     nodeState.uniqueID, 
                     nodeState.tracked,

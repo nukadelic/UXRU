@@ -8,12 +8,12 @@ namespace Utils.XR
 {
     // Minimum requirments: Unity version 2019.2
     // Based on: https://forum.unity.com/threads/any-example-of-the-new-2019-1-xr-input-system.629824/#post-4513171
-    // Note: install [ XR Legacy Input Helpers ] package 
+    // Note: install [ XR Legacy Input Helpers ] package if you see errors
 
     public class XRTracker : MonoBehaviour
     {
-                            //Keep this around to avoid creating heap garbage
-        static              List<InputDevice> devices = new List<InputDevice>();
+        //Keep this around to avoid creating heap garbage
+        static List<InputDevice> devices = new List<InputDevice>();
         
         [Tooltip("UnityEngine.XR.InputDeviceRole")]
         [SerializeField]    public InputDeviceRole role = InputDeviceRole.Generic;
@@ -22,6 +22,15 @@ namespace Utils.XR
         [HideInInspector] public bool trackRotation = true;
 
         [HideInInspector]   public InputDevice trackedDevice;
+
+        [Flags]
+        public enum UpdateFlags
+        {
+            Never = 0,
+            DuringUpdate = 1 << 0,
+            BeforeRender = 1 << 1,
+            Always = -1
+        }
 
         public UpdateFlags trackTransformation = UpdateFlags.DuringUpdate;
         
@@ -69,29 +78,29 @@ namespace Utils.XR
 
             if( ! trackedDevice.TryGetFeatureValue( CommonUsages.primary2DAxis, out axis ) )
             {
-                XRUtil.LogError("Failed to get feature value");
+                XRUtil.LogError("Failed to get primary axis value");
                 return Vector2.zero;
             }
 
             return axis;
         }
 
-        // public bool HasAxisSecondary() { return HasFeature( CommonUsages.secondary2DAxis.name ); }
-        // /// Returns secondary Axis (2D) vector
-        // public Vector2 GetAxisSecondary()
-        // {
-        //     if( ! HasAxisSecondary() ) return Vector2.zero;
+        public bool HasAxisSecondary() { return HasFeature( CommonUsages.secondary2DAxis.name ); }
+        /// Returns secondary Axis (2D) vector
+        public Vector2 GetAxisSecondary()
+        {
+            if( ! HasAxisSecondary() ) return Vector2.zero;
 
-        //     Vector2 axis;
+            Vector2 axis;
 
-        //     if( ! trackedDevice.TryGetFeatureValue( CommonUsages.secondary2DAxis, out axis ) )
-        //     {
-        //         XRUtil.LogError("Failed to get feature value");
-        //         return Vector2.zero;
-        //     }
+            if( ! trackedDevice.TryGetFeatureValue( CommonUsages.secondary2DAxis, out axis ) )
+            {
+                XRUtil.LogError("Failed to get secondary axis value");
+                return Vector2.zero;
+            }
 
-        //     return axis;
-        // }
+            return axis;
+        }
 
         public bool HasAxisTrigger() { return HasFeature( CommonUsages.trigger.name ); }
         /// Returns trigger Axis (1D) value from 0 to 1 ( index finger )
@@ -105,7 +114,7 @@ namespace Utils.XR
 
             if( ! trackedDevice.TryGetFeatureValue( CommonUsages.trigger, out value ) )
             {
-                XRUtil.LogError("Failed to get feature value");
+                XRUtil.LogError("Failed to get trigger axis value");
                 return 0;
             }
 
@@ -124,7 +133,7 @@ namespace Utils.XR
 
             if( ! trackedDevice.TryGetFeatureValue( CommonUsages.grip, out value ) )
             {
-                XRUtil.LogError("Failed to get feature value");
+                XRUtil.LogError("Failed to get grip axis value");
                 return 0;
             }
 
@@ -333,131 +342,5 @@ namespace Utils.XR
             }
         }
 
-        [Flags]
-        public enum UpdateFlags
-        {
-            Never = 0,
-            DuringUpdate = 1 << 0,
-            BeforeRender = 1 << 1,
-            Always = -1
-        }
-
-        // public static class Axis
-        // {
-        //     public static InputFeatureUsage<float> batteryLevel = CommonUsages.batteryLevel;
-        //     public static InputFeatureUsage<float> grip = CommonUsages.grip;
-        //     public static InputFeatureUsage<float> trigger = CommonUsages.trigger;
-        //     public static InputFeatureUsage<Vector2> primary2DAxis = CommonUsages.primary2DAxis;
-        // }
-
-        // public static class XRButtons
-        // {
-        //     // public static InputFeatureUsage<bool> isTracked = CommonUsages.isTracked;
-        //     public static InputFeatureUsage<bool> primaryButton         = CommonUsages.primaryButton;
-        //     public static InputFeatureUsage<bool> primaryTouch          = CommonUsages.primaryTouch;
-        //     public static InputFeatureUsage<bool> secondaryButton       = CommonUsages.secondaryButton;
-        //     public static InputFeatureUsage<bool> secondaryTouch        = CommonUsages.secondaryTouch;
-        //     public static InputFeatureUsage<bool> gripButton            = new InputFeatureUsage<bool>("_Grip_Button");
-        //     public static InputFeatureUsage<bool> gripTouch             = new InputFeatureUsage<bool>("_Grip_Touch");
-        //     public static InputFeatureUsage<bool> triggerButton         = new InputFeatureUsage<bool>("_Trigger_Button");
-        //     // Oculus Rift S - this is actually the trigger touch and it works very well 
-        //     public static InputFeatureUsage<bool> triggerTouch          = CommonUsages.triggerButton;
-        //     // public static InputFeatureUsage<bool> triggerButton         = new InputFeatureUsage<bool>("_Trigger_Touch");
-        //     public static InputFeatureUsage<bool> menuButton            = CommonUsages.menuButton;
-        //     public static InputFeatureUsage<bool> primary2DAxisClick    = CommonUsages.primary2DAxisClick;
-        //     public static InputFeatureUsage<bool> primary2DAxisTouch    = CommonUsages.primary2DAxisTouch;
-        //     // public static InputFeatureUsage<bool> secondary2DAxisClick = CommonUsages.secondary2DAxisClick;
-        //     // public static InputFeatureUsage<bool> secondary2DAxisTouch = CommonUsages.secondary2DAxisTouch;
-        // }
-
-        // static List<InputFeatureUsage<bool>> CustomButtons = new List<InputFeatureUsage<bool>>
-        // {
-        //     XRButtons.gripButton,
-        //     XRButtons.gripTouch,
-        //     XRButtons.triggerButton,
-        //     // Buttons.triggerTouch,
-        // };
-
-        // static List<InputFeatureUsage<bool>> ButtonsList = new List<InputFeatureUsage<bool>>
-        // {
-        //     XRButtons.primaryButton,
-        //     XRButtons.primaryTouch,
-        //     XRButtons.secondaryButton,
-        //     XRButtons.secondaryTouch,
-        //     XRButtons.gripButton,
-        //     XRButtons.gripTouch,
-        //     XRButtons.triggerButton,
-        //     XRButtons.triggerTouch,
-        //     XRButtons.menuButton,
-        //     XRButtons.primary2DAxisClick,
-        //     XRButtons.primary2DAxisTouch,
-        // };
-
-        // static public InputFeatureUsage<bool> ButtonGet( XRButtonType button )
-        // {
-        //     return XRStaticButtons.ButtonsList[ ( int ) button ];
-        // }
-
-        // public class CommonUsage
-        // {
-        //     public Type type;
-        //     public string name;
-        //     public string link;
-        //     public CommonUsage() { }
-        // }
-
-        // public static List<CommonUsage> usages = new List<CommonUsage>
-        // {
-        //     new CommonUsage { type = typeof( bool )                 , name = "isTracked"                        , link = "IsTracked" },
-        //     new CommonUsage { type = typeof( bool )                 , name = "primaryButton"                    , link = "PrimaryButton" },
-        //     new CommonUsage { type = typeof( bool )                 , name = "primaryTouch"                     , link = "PrimaryTouch" },
-        //     new CommonUsage { type = typeof( bool )                 , name = "secondaryButton"                  , link = "SecondaryButton" },
-        //     new CommonUsage { type = typeof( bool )                 , name = "secondaryTouch"                   , link = "SecondaryTouch" },
-        //     new CommonUsage { type = typeof( bool )                 , name = "gripButton"                       , link = "GripButton" },
-        //     new CommonUsage { type = typeof( bool )                 , name = "triggerButton"                    , link = "TriggerButton" },
-        //     new CommonUsage { type = typeof( bool )                 , name = "menuButton"                       , link = "MenuButton" },
-        //     new CommonUsage { type = typeof( bool )                 , name = "primary2DAxisClick"               , link = "Primary2DAxisClick" },
-        //     new CommonUsage { type = typeof( bool )                 , name = "primary2DAxisTouch"               , link = "Primary2DAxisTouch" },
-        //     new CommonUsage { type = typeof( bool )                 , name = "secondary2DAxisClick"             , link = "Secondary2DAxisClick" },
-        //     new CommonUsage { type = typeof( bool )                 , name = "secondary2DAxisTouch"             , link = "Secondary2DAxisTouch" },
-        //     new CommonUsage { type = typeof( InputTrackingState )   , name = "trackingState"                    , link = "TrackingState" },
-        //     new CommonUsage { type = typeof( float )                , name = "batteryLevel"                     , link = "BatteryLevel" },
-        //     new CommonUsage { type = typeof( float )                , name = "trigger"                          , link = "Trigger" },
-        //     new CommonUsage { type = typeof( float )                , name = "grip"                             , link = "Grip" },
-        //     new CommonUsage { type = typeof( Vector2 )              , name = "primary2DAxis"                    , link = "Primary2DAxis" },
-        //     new CommonUsage { type = typeof( Vector2 )              , name = "secondary2DAxis"                  , link = "Secondary2DAxis" },
-        //     new CommonUsage { type = typeof( Vector3 )              , name = "devicePosition"                   , link = "DevicePosition" },
-        //     new CommonUsage { type = typeof( Vector3 )              , name = "leftEyePosition"                  , link = "LeftEyePosition" },
-        //     new CommonUsage { type = typeof( Vector3 )              , name = "rightEyePosition"                 , link = "RightEyePosition" },
-        //     new CommonUsage { type = typeof( Vector3 )              , name = "centerEyePosition"                , link = "CenterEyePosition" },
-        //     new CommonUsage { type = typeof( Vector3 )              , name = "colorCameraPosition"              , link = "CameraPosition" },
-        //     new CommonUsage { type = typeof( Vector3 )              , name = "deviceVelocity"                   , link = "DeviceVelocity" },
-        //     new CommonUsage { type = typeof( Vector3 )              , name = "deviceAngularVelocity"            , link = "DeviceAngularVelocity" },
-        //     new CommonUsage { type = typeof( Vector3 )              , name = "leftEyeVelocity"                  , link = "LeftEyeVelocity" },
-        //     new CommonUsage { type = typeof( Vector3 )              , name = "leftEyeAngularVelocity"           , link = "LeftEyeAngularVelocity" },
-        //     new CommonUsage { type = typeof( Vector3 )              , name = "rightEyeVelocity"                 , link = "RightEyeVelocity" },
-        //     new CommonUsage { type = typeof( Vector3 )              , name = "rightEyeAngularVelocity"          , link = "RightEyeAngularVelocity" },
-        //     new CommonUsage { type = typeof( Vector3 )              , name = "centerEyeVelocity"                , link = "CenterEyeVelocity" },
-        //     new CommonUsage { type = typeof( Vector3 )              , name = "centerEyeAngularVelocity"         , link = "CenterEyeAngularVelocity" },
-        //     new CommonUsage { type = typeof( Vector3 )              , name = "colorCameraVelocity"              , link = "CameraVelocity" },
-        //     new CommonUsage { type = typeof( Vector3 )              , name = "colorCameraAngularVelocity"       , link = "CameraAngularVelocity" },
-        //     new CommonUsage { type = typeof( Vector3 )              , name = "deviceAcceleration"               , link = "DeviceAcceleration" },
-        //     new CommonUsage { type = typeof( Vector3 )              , name = "deviceAngularAcceleration"        , link = "DeviceAngularAcceleration" },
-        //     new CommonUsage { type = typeof( Vector3 )              , name = "leftEyeAcceleration"              , link = "LeftEyeAcceleration" },
-        //     new CommonUsage { type = typeof( Vector3 )              , name = "leftEyeAngularAcceleration"       , link = "LeftEyeAngularAcceleration" },
-        //     new CommonUsage { type = typeof( Vector3 )              , name = "rightEyeAcceleration"             , link = "RightEyeAcceleration" },
-        //     new CommonUsage { type = typeof( Vector3 )              , name = "rightEyeAngularAcceleration"      , link = "RightEyeAngularAcceleration" },
-        //     new CommonUsage { type = typeof( Vector3 )              , name = "centerEyeAcceleration"            , link = "CenterEyeAcceleration" },
-        //     new CommonUsage { type = typeof( Vector3 )              , name = "centerEyeAngularAcceleration"     , link = "CenterEyeAngularAcceleration" },
-        //     new CommonUsage { type = typeof( Vector3 )              , name = "colorCameraAcceleration"          , link = "CameraAcceleration" },
-        //     new CommonUsage { type = typeof( Vector3 )              , name = "colorCameraAngularAcceleration"   , link = "CameraAngularAcceleration" },
-        //     new CommonUsage { type = typeof( Quaternion )           , name = "deviceRotation"                   , link = "DeviceRotation" },
-        //     new CommonUsage { type = typeof( Quaternion )           , name = "leftEyeRotation"                  , link = "LeftEyeRotation" },
-        //     new CommonUsage { type = typeof( Quaternion )           , name = "rightEyeRotation"                 , link = "RightEyeRotation" },
-        //     new CommonUsage { type = typeof( Quaternion )           , name = "centerEyeRotation"                , link = "CenterEyeRotation" },
-        //     new CommonUsage { type = typeof( Quaternion )           , name = "colorCameraRotation"              , link = "CameraRotation" },
-        //     new CommonUsage { type = typeof( Hand )                 , name = "handData"                         , link = "HandData" },
-        //     new CommonUsage { type = typeof( Eyes )                 , name = "eyesData"                         , link = "EyesData" },
-        // };
     }
 }
