@@ -16,12 +16,21 @@ namespace Utils.XR
         static List<InputDevice> devices = new List<InputDevice>();
         
         [Tooltip("UnityEngine.XR.InputDeviceRole")]
-        [SerializeField]    public InputDeviceRole role = InputDeviceRole.Generic;
+        // [SerializeField]    public InputDeviceRole role = InputDeviceRole.Generic;
+
+        public XRDevice xrDevice = XRDevice.HeadMountedDevice;
 
         [HideInInspector] public bool trackPosition = true;
         [HideInInspector] public bool trackRotation = true;
 
         [HideInInspector]   public InputDevice trackedDevice;
+
+        public enum XRDevice : uint
+        {
+            LeftController = InputDeviceCharacteristics.Left | InputDeviceCharacteristics.TrackedDevice | InputDeviceCharacteristics.Controller,
+            RightController = InputDeviceCharacteristics.Right | InputDeviceCharacteristics.TrackedDevice | InputDeviceCharacteristics.Controller,
+            HeadMountedDevice = InputDeviceCharacteristics.TrackedDevice | InputDeviceCharacteristics.HeadMounted
+        }
 
         [Flags]
         public enum UpdateFlags
@@ -43,7 +52,8 @@ namespace Utils.XR
         }
 
         /// Check if tracker device is hand ( left or right )
-        public bool IsHand { get { return role == InputDeviceRole.LeftHanded || role == InputDeviceRole.RightHanded; } }
+        public bool IsController { get { return ( (uint)xrDevice & (uint)InputDeviceCharacteristics.Controller ) > 0; } }
+        // public bool IsHand { get { return role == InputDeviceRole.LeftHanded || role == InputDeviceRole.RightHanded; } }
 
         [HideInInspector]   public List<InputFeatureUsage> features = new List<InputFeatureUsage>();
         [HideInInspector]   public List<string> featureNames;
@@ -246,7 +256,8 @@ namespace Utils.XR
             InputDevices.deviceDisconnected     += OnDeviceDisconnected;
             // // Application.onBeforeRender          += OnBeforeRender;
 
-            InputDevices.GetDevicesWithRole( role, devices );
+            // InputDevices.GetDevicesWithCharacteristics( InputDeviceCharacteristics.TrackingReference, devices );
+            // InputDevices.GetDevicesWithRole( role, devices );
 
             if ( devices.Count > 0) OnDeviceConnected( devices[0] );
         }
@@ -294,18 +305,38 @@ namespace Utils.XR
         }
 
         void OnDeviceConnected( InputDevice device )
-        {
-            if ( ! trackedDevice.isValid && device.role == role ) 
-            {
-                trackedDevice = device;
-                
-                if( trackedDevice.TryGetFeatureUsages( features ) )
-                    
-                    featureNames = features.Select( feature => feature.name ).ToList();
+        {   
+            // Skip tracking invalid device          
+            if( ! device.isValid ) return;
 
-                // TODO: add error reporting everywhere that uses a [TryGet"Something"] pattern
-                else XRUtil.LogError("Failed to get feature usages");
+            // Skip allready tracked device 
+            if( trackedDevice == device ) 
+            {
+                XRUtil.Log("Device is allready tracked: " + device.name );
+                return;
             }
+
+            Debug.Log(device.name + " vs " + xrDevice.ToString() );
+            var deviceFlags = (uint) device.characteristics;
+            var selectedFlags = (uint) xrDevice;
+            var a = Convert.ToString( deviceFlags, 2);
+            var b = Convert.ToString( selectedFlags, 2);
+            var c = Convert.ToString( deviceFlags & selectedFlags, 2);
+            Debug.Log( a + " & " + b + "=" + c );
+
+            if( ! ( ( deviceFlags & selectedFlags ) == selectedFlags ) ) return;
+
+            trackedDevice = device;
+
+            XRUtil.Log("Connected & Tracking " + xrDevice.ToString() );
+            
+            if( trackedDevice.TryGetFeatureUsages( features ) )
+                
+                featureNames = features.Select( feature => feature.name ).ToList();
+
+            // TODO: add error reporting everywhere that uses a [TryGet"Something"] pattern
+            else XRUtil.LogError("Failed to get feature usages");
+
         }
 
         void OnDeviceDisconnected( InputDevice device )

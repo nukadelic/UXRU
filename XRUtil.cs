@@ -37,7 +37,7 @@ namespace Utils.XR
         [RuntimeInitializeOnLoadMethod]
         static private void Initialize()
         {
-            // return;
+            return;
 
             InputTracking.nodeRemoved += nodeState => {
 
@@ -167,19 +167,19 @@ namespace Utils.XR
                 Log( "- - - " );
                 Log( "Device Connected" );
                 Lof( "- {0,-24}\t {1}", "Name", device.name );
-                Lof( "- {0,-24}\t {1}", "Role", device.role );
+                Lof( "- {0,-24}\t {1}", "Characteristics", device.characteristics );
                 Lof( "- {0,-24}\t {1}", "Valid", device.isValid );
 
                 HapticCapabilities haptics;
                 if( device.TryGetHapticCapabilities( out haptics ) )
                 {   
                     Log("- Device Haptics:");
-                    Lof("- - {0,-36}\t {1}", "bufferFrequencyHz",   haptics.bufferFrequencyHz );
-                    Lof("- - {0,-36}\t {1}", "bufferMaxSize",       haptics.bufferMaxSize );
-                    Lof("- - {0,-36}\t {1}", "bufferOptimalSize",   haptics.bufferOptimalSize );
-                    Lof("- - {0,-36}\t {1}", "numChannels",         haptics.numChannels );
-                    Lof("- - {0,-36}\t {1}", "supportsBuffer",      haptics.supportsBuffer );
-                    Lof("- - {0,-36}\t {1}", "supportsImpulse",     haptics.supportsImpulse );
+                    Lof("- - {0,-42}\t {1}", "bufferFrequencyHz",   haptics.bufferFrequencyHz );
+                    Lof("- - {0,-42}\t {1}", "bufferMaxSize",       haptics.bufferMaxSize );
+                    Lof("- - {0,-42}\t {1}", "bufferOptimalSize",   haptics.bufferOptimalSize );
+                    Lof("- - {0,-42}\t {1}", "numChannels",         haptics.numChannels );
+                    Lof("- - {0,-42}\t {1}", "supportsBuffer",      haptics.supportsBuffer );
+                    Lof("- - {0,-42}\t {1}", "supportsImpulse",     haptics.supportsImpulse );
                 }
 
                 // if( device.SendHapticImpulse( 0, 1 ) )   
@@ -192,9 +192,9 @@ namespace Utils.XR
 
                 if( device.TryGetFeatureUsages( featureUsages ) ) 
                 {
-                    Log("- Device Features:");
+                    Log("- Device Features: ( Name, IsReactive, Type )");
                     foreach( var feature in featureUsages )
-                        Lof( "- - {0,-36}\t {1} \t ( {2} )" , feature.name, 
+                        Lof( "- - {0,-42}\t {1} \t ( {2} )" , feature.name, 
                             DeviceFeatureIsReactive( device, feature ), feature.type
                     );
                 }
@@ -207,7 +207,7 @@ namespace Utils.XR
                 Log( "- - - " );
                 Log( "Device Connection Lost" );
                 Lof( "- {0,-24}\t {1}", "Name", device.name );
-                Lof( "- {0,-24}\t {1}", "Role", device.role );
+                Lof( "- {0,-24}\t {1}", "Characteristics", device.characteristics );
             };
         }
 
